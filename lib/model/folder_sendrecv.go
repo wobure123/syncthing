@@ -1364,52 +1364,50 @@ func (f *sendReceiveFolder) copierRoutine(in <-chan copyBlocksState, pullChan ch
 					l.Debugln("weak hasher iter", err)
 				}
 			}
+// if !found { // 	found = f.model.finder.Iterate(folders, block.Hash, func(folder, path string, index int32) bool {
+			// 		ffs := folderFilesystems[folder]
+			// 		fd, err := ffs.Open(path)
+			// 		if err != nil {
+			// 			return false
+			// 		}
+			// 		defer fd.Close()
 
-			if !found {
-				found = f.model.finder.Iterate(folders, block.Hash, func(folder, path string, index int32) bool {
-					ffs := folderFilesystems[folder]
-					fd, err := ffs.Open(path)
-					if err != nil {
-						return false
-					}
-					defer fd.Close()
+			// 		srcOffset := int64(state.file.BlockSize()) * int64(index)
+			// 		_, err = fd.ReadAt(buf, srcOffset)
+			// 		if err != nil {
+			// 			return false
+			// 		}
 
-					srcOffset := int64(state.file.BlockSize()) * int64(index)
-					_, err = fd.ReadAt(buf, srcOffset)
-					if err != nil {
-						return false
-					}
+			// 		// Hash is not SHA256 as it's an encrypted hash token. In that
+			// 		// case we can't verify the block integrity so we'll take it on
+			// 		// trust. (The other side can and will verify.)
+			// 		if f.Type != config.FolderTypeReceiveEncrypted {
+			// 			if err := f.verifyBuffer(buf, block); err != nil {
+			// 				l.Debugln("Finder failed to verify buffer", err)
+			// 				return false
+			// 			}
+			// 		}
 
-					// Hash is not SHA256 as it's an encrypted hash token. In that
-					// case we can't verify the block integrity so we'll take it on
-					// trust. (The other side can and will verify.)
-					if f.Type != config.FolderTypeReceiveEncrypted {
-						if err := f.verifyBuffer(buf, block); err != nil {
-							l.Debugln("Finder failed to verify buffer", err)
-							return false
-						}
-					}
-
-					if f.CopyRangeMethod != fs.CopyRangeMethodStandard {
-						err = f.withLimiter(func() error {
-							dstFd.mut.Lock()
-							defer dstFd.mut.Unlock()
-							return fs.CopyRange(f.CopyRangeMethod, fd, dstFd.fd, srcOffset, block.Offset, int64(block.Size))
-						})
-					} else {
-						err = f.limitedWriteAt(dstFd, buf, block.Offset)
-					}
-					if err != nil {
-						state.fail(fmt.Errorf("dst write: %w", err))
-					}
-					if path == state.file.Name {
-						state.copiedFromOrigin(block.Size)
-					} else {
-						state.copiedFromElsewhere(block.Size)
-					}
-					return true
-				})
-			}
+			// 		if f.CopyRangeMethod != fs.CopyRangeMethodStandard {
+			// 			err = f.withLimiter(func() error {
+			// 				dstFd.mut.Lock()
+			// 				defer dstFd.mut.Unlock()
+			// 				return fs.CopyRange(f.CopyRangeMethod, fd, dstFd.fd, srcOffset, block.Offset, int64(block.Size))
+			// 			})
+			// 		} else {
+			// 			err = f.limitedWriteAt(dstFd, buf, block.Offset)
+			// 		}
+			// 		if err != nil {
+			// 			state.fail(fmt.Errorf("dst write: %w", err))
+			// 		}
+			// 		if path == state.file.Name {
+			// 			state.copiedFromOrigin(block.Size)
+			// 		} else {
+			// 			state.copiedFromElsewhere(block.Size)
+			// 		}
+			// 		return true
+			// 	})
+			// }
 
 			if state.failed() != nil {
 				break
