@@ -16,27 +16,25 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up Docker
-      uses: docker/setup-docker@v2
-      with:
-        version: '20.10.24' # 使用最新的稳定版本
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
 
     - name: Pull FreeBSD Docker image
-      run: docker pull kayge/freebsd:14.1
+      run: docker pull freebsd:14.1
 
     - name: Run FreeBSD container
       run: |
-        docker run --name freebsd-builder -d -v ${{ github.workspace }}:/workspace kayge/freebsd:14.1 /sbin/init
+        docker run --name freebsd-builder -d -v ${{ github.workspace }}:/workspace freebsd:14.1 /sbin/init
         docker exec freebsd-builder sh -c "pkg update && pkg install -y git go bash gmake"
 
-    - name: Install Go and compile Syncthing
+    - name: Build Syncthing
       run: |
         docker exec freebsd-builder sh -c "
           cd /workspace &&
           export GOPATH=/go &&
           export PATH=\$PATH:/usr/local/go/bin:/go/bin &&
           go run build.go"
-      
+
     - name: Copy binary
       run: |
         docker cp freebsd-builder:/workspace/bin/syncthing ./syncthing-freebsd
