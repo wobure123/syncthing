@@ -17,37 +17,29 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Set up Docker
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y docker.io
-
-    - name: Start Docker service
-      run: |
-        sudo systemctl start docker
+      uses: docker/setup-docker@v2
+      with:
+        version: '20.10.24' # 使用最新的稳定版本
 
     - name: Pull FreeBSD Docker image
-      run: |
-        sudo docker pull kayge/freebsd:14.1
+      run: docker pull kayge/freebsd:14.1
 
     - name: Run FreeBSD container
       run: |
-        sudo docker run --name freebsd-builder -d -v ${{ github.workspace }}:/workspace kayge/freebsd:14.1 /sbin/init
+        docker run --name freebsd-builder -d -v ${{ github.workspace }}:/workspace kayge/freebsd:14.1 /sbin/init
+        docker exec freebsd-builder sh -c "pkg update && pkg install -y git go bash gmake"
 
-    - name: Install dependencies in container
+    - name: Install Go and compile Syncthing
       run: |
-        sudo docker exec freebsd-builder sh -c "pkg update && pkg install -y git go bash gmake"
-
-    - name: Build Syncthing
-      run: |
-        sudo docker exec freebsd-builder sh -c "
+        docker exec freebsd-builder sh -c "
           cd /workspace &&
           export GOPATH=/go &&
           export PATH=\$PATH:/usr/local/go/bin:/go/bin &&
           go run build.go"
-
+      
     - name: Copy binary
       run: |
-        sudo docker cp freebsd-builder:/workspace/bin/syncthing ./syncthing-freebsd
+        docker cp freebsd-builder:/workspace/bin/syncthing ./syncthing-freebsd
         ls -lh ./syncthing-freebsd
 
     - name: Upload binary
