@@ -1,0 +1,50 @@
+name: Build Syncthing for FreeBSD 14.1
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Docker
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y docker.io
+
+    - name: Pull FreeBSD Docker image
+      run: docker pull kayge/freebsd:14.1
+
+    - name: Run FreeBSD container
+      run: |
+        docker run --name freebsd-builder -d -v ${{ github.workspace }}:/workspace kayge/freebsd:14.1 /sbin/init
+        docker exec freebsd-builder sh -c "pkg update && pkg install -y git go bash gmake"
+
+    - name: Install Go and compile Syncthing
+      run: |
+        docker exec freebsd-builder sh -c "
+          cd /workspace &&
+          export GOPATH=/go &&
+          export PATH=\$PATH:/usr/local/go/bin:/go/bin &&
+          go run build.go"
+      
+    - name: Copy binary
+      run: |
+        docker cp freebsd-builder:/workspace/bin/syncthing ./syncthing-freebsd
+        ls -lh ./syncthing-freebsd
+
+    - name: Upload binary
+      uses: actions/upload-artifact@v3
+      with:
+        name: syncthing-freebsd
+        path: ./syncthing-freebsd
+
