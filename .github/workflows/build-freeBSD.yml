@@ -21,25 +21,33 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y docker.io
 
+    - name: Start Docker service
+      run: |
+        sudo systemctl start docker
+
     - name: Pull FreeBSD Docker image
-      run: docker pull kayge/freebsd:14.1
+      run: |
+        sudo docker pull kayge/freebsd:14.1
 
     - name: Run FreeBSD container
       run: |
-        docker run --name freebsd-builder -d -v ${{ github.workspace }}:/workspace kayge/freebsd:14.1 /sbin/init
-        docker exec freebsd-builder sh -c "pkg update && pkg install -y git go bash gmake"
+        sudo docker run --name freebsd-builder -d -v ${{ github.workspace }}:/workspace kayge/freebsd:14.1 /sbin/init
 
-    - name: Install Go and compile Syncthing
+    - name: Install dependencies in container
       run: |
-        docker exec freebsd-builder sh -c "
+        sudo docker exec freebsd-builder sh -c "pkg update && pkg install -y git go bash gmake"
+
+    - name: Build Syncthing
+      run: |
+        sudo docker exec freebsd-builder sh -c "
           cd /workspace &&
           export GOPATH=/go &&
           export PATH=\$PATH:/usr/local/go/bin:/go/bin &&
           go run build.go"
-      
+
     - name: Copy binary
       run: |
-        docker cp freebsd-builder:/workspace/bin/syncthing ./syncthing-freebsd
+        sudo docker cp freebsd-builder:/workspace/bin/syncthing ./syncthing-freebsd
         ls -lh ./syncthing-freebsd
 
     - name: Upload binary
@@ -47,4 +55,3 @@ jobs:
       with:
         name: syncthing-freebsd
         path: ./syncthing-freebsd
-
