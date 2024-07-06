@@ -57,9 +57,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: syncthing-ubuntu-debian
+          path: ./syncthing-ubuntu-debian
 
       - name: List downloaded artifacts
-        run: ls -al syncthing-ubuntu-debian
+        run: ls -al ./syncthing-ubuntu-debian
 
       - name: Create Release
         id: create_release
@@ -78,6 +79,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: syncthing-ubuntu-debian/syncthing
+          asset_path: ./syncthing-ubuntu-debian/syncthing
           asset_name: syncthing
           asset_content_type: application/octet-stream
