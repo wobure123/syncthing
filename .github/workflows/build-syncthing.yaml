@@ -10,6 +10,7 @@ env:
   GO_VERSION: "~1.22.3"
   BUILD_USER: builder
   BUILD_HOST: github.syncthing.net
+  VERSION: "v1.28.3"  # 硬编码的版本号
 
 jobs:
   build-ubuntu-debian:
@@ -29,7 +30,7 @@ jobs:
       - name: Build Syncthing
         run: |
           go version
-          GOARCH=amd64 go run build.go -version=v1.28.3
+          GOARCH=amd64 go run build.go -version=${{ env.VERSION }}
         env:
           CGO_ENABLED: "0"
 
@@ -57,20 +58,14 @@ jobs:
         with:
           name: syncthing-ubuntu-debian
 
-      - name: Get Tag Name
-        id: get_tag_name
-        run: |
-          TAG_NAME=$(git describe --tags --abbrev=0)
-          echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_ENV
-
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ env.TAG_NAME }}
-          release_name: Release ${{ env.TAG_NAME }}
+          tag_name: ${{ env.VERSION }}
+          release_name: Release ${{ env.VERSION }}
           draft: false
           prerelease: false
 
