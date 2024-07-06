@@ -13,7 +13,7 @@ env:
 
 jobs:
   build-ubuntu-debian:
-    name: Build Syncthing for Ubuntu/Debian
+    name: Build Syncthing for Ubuntu/Debian (x86_64)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,7 +29,7 @@ jobs:
       - name: Build Syncthing
         run: |
           go version
-          go run build.go
+          GOARCH=amd64 go run build.go
         env:
           CGO_ENABLED: "0"
 
@@ -57,14 +57,18 @@ jobs:
         with:
           name: syncthing-ubuntu-debian
 
+      - name: Extract tag name
+        id: extract_tag
+        run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          tag_name: ${{ env.TAG_NAME }}
+          release_name: Release ${{ env.TAG_NAME }}
           draft: false
           prerelease: false
 
