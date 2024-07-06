@@ -10,7 +10,7 @@ env:
   GO_VERSION: "~1.22.3"
   BUILD_USER: builder
   BUILD_HOST: github.syncthing.net
-  VERSION: "v1.28.3"  # 硬编码的版本号
+  VERSION: "v1.28.4"  # 硬编码的版本号
 
 jobs:
   build-ubuntu-debian:
