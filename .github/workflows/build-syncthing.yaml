@@ -57,9 +57,11 @@ jobs:
         with:
           name: syncthing-ubuntu-debian
 
-      - name: Extract tag name
-        id: extract_tag
-        run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+      - name: Get Tag Name
+        id: get_tag_name
+        run: |
+          TAG_NAME=$(git describe --tags --abbrev=0)
+          echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_ENV
 
       - name: Create Release
         id: create_release
