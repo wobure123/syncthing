@@ -17,13 +17,14 @@ import (
 	"unicode/utf8"
 
 	metrics "github.com/rcrowley/go-metrics"
+	"golang.org/x/text/unicode/norm"
+
 	"github.com/syncthing/syncthing/lib/build"
 	"github.com/syncthing/syncthing/lib/events"
 	"github.com/syncthing/syncthing/lib/fs"
 	"github.com/syncthing/syncthing/lib/ignore"
 	"github.com/syncthing/syncthing/lib/osutil"
 	"github.com/syncthing/syncthing/lib/protocol"
-	"golang.org/x/text/unicode/norm"
 )
 
 type Config struct {
@@ -391,9 +392,13 @@ func (w *walker) handleItem(ctx context.Context, path string, info fs.FileInfo, 
 
 	case info.IsRegular():
 		return w.walkRegular(ctx, path, info, toHashChan)
-	}
 
-	return fmt.Errorf("bug: file info for %v is neither symlink, dir nor regular", path)
+	default:
+		// A special file, socket, fifo, etc. -- do nothing but return
+		// success so we continue the walk.
+		l.Debugf("Skipping non-regular file %s (%s)", path, info.Mode())
+		return nil
+	}
 }
 
 func (w *walker) walkRegular(ctx context.Context, relPath string, info fs.FileInfo, toHashChan chan<- protocol.FileInfo) error {
@@ -421,7 +426,7 @@ func (w *walker) walkRegular(ctx context.Context, relPath string, info fs.FileIn
 	}
 	f = w.updateFileInfo(f, curFile)
 	f.NoPermissions = w.IgnorePerms
-	f.RawBlockSize = blockSize
+	f.RawBlockSize = int32(blockSize)
 	l.Debugln(w, "checking:", f)
 
 	if hasCurFile {
@@ -725,7 +730,7 @@ func CreateFileInfo(fi fs.FileInfo, name string, filesystem fs.Filesystem, scanO
 
 	f.Permissions = uint32(fi.Mode() & fs.ModePerm)
 	f.ModifiedS = fi.ModTime().Unix()
-	f.ModifiedNs = fi.ModTime().Nanosecond()
+	f.ModifiedNs = int32(fi.ModTime().Nanosecond())
 
 	if fi.IsDir() {
 		f.Type = protocol.FileInfoTypeDirectory
